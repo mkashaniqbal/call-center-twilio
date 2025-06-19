@@ -1,25 +1,36 @@
+// server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const axios = require('axios');
+const twilio = require('twilio');
+require('dotenv').config(); // Load environment variables
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('public')); // Serve frontend
+app.use(express.static('public')); // Serve frontend from /public folder
 
-// 🔐 Replace with your actual Twilio credentials
-const accountSid = 'AC13a8eb7fc3bf02255faee455aad81d82';
-const authToken = '3d4885a297396c029d07502fb36e3425';
-const twilioNumber = 'whatsapp:+5493541628808'; // Example: whatsapp:+5493541628808
-const contentSid = 'HXc73acb29580e7bda999b949d369e157f'; // This is your approved WhatsApp template SID
+// Twilio credentials from .env
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioNumber = process.env.TWILIO_WHATSAPP_FROM; // e.g., whatsapp:+5493541628808
+const contentSid = process.env.TWILIO_TEMPLATE_SID;
+const voiceCallerId = process.env.TWILIO_CALLER_ID; // Voice Twilio number, e.g., +1XXXXXXXXXX
+const agentNumber = process.env.AGENT_NUMBER; // The agent who receives voice calls
+const baseUrl = process.env.BASE_URL; // e.g., https://your-app.railway.app
 
+const voiceClient = twilio(accountSid, authToken);
+
+// ✅ WhatsApp Template Message
 app.post('/send-message', async (req, res) => {
-  const { to, name, order } = req.body;
+  const { to, name, order, location } = req.body;
 
   try {
     const response = await axios.post(
-      'https://api.twilio.com/2010-04-01/Accounts/AC13a8eb7fc3bf02255faee455aad81d82/Messages.json',
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
       new URLSearchParams({
         To: `whatsapp:${to}`,
         From: twilioNumber,
@@ -47,6 +58,32 @@ app.post('/send-message', async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log('✅ Server running at http://localhost:3000');
+// ✅ Start a Voice Call
+app.post('/start-call', async (req, res) => {
+  const { customerNumber } = req.body;
+
+  try {
+    const call = await voiceClient.calls.create({
+      to: customerNumber,
+      from: voiceCallerId,
+      url: `${baseUrl}/voice.xml`
+    });
+
+    res.json({ success: true, sid: call.sid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ TwiML to Connect Customer to Agent
+app.post('/voice.xml', (req, res) => {
+  const twiml = new twilio.twiml.VoiceResponse();
+  twiml.say('Please wait while we connect you to an agent.');
+  twiml.dial(agentNumber);
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });

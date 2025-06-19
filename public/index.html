@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Send WhatsApp Message</title>
+  <title>Send WhatsApp Message & Call</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -50,6 +50,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      margin-bottom: 10px;
     }
 
     button:hover {
@@ -79,39 +80,66 @@
 </head>
 <body>
   <div class="container">
-    <h2>Send WhatsApp Message</h2>
+    <h2>Send WhatsApp Message & Make Call</h2>
     <form id="msgForm">
       <input type="text" id="to" placeholder="Customer WhatsApp (e.g. +549...)" required />
       <input type="text" id="name" placeholder="Customer Name" required />
       <input type="text" id="order" placeholder="Order ID / Details" required />
-      <button type="submit">Send</button>
+      <input type="text" id="location" placeholder="Customer Location (optional)" />
+      <button type="submit">Send WhatsApp Message</button>
+      <button type="button" id="callBtn">Make Voice Call</button>
     </form>
     <div id="response"></div>
   </div>
 
-
   <script>
     const form = document.getElementById('msgForm');
+    const callBtn = document.getElementById('callBtn');
     const responseBox = document.getElementById('response');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const to = document.getElementById('to').value;
       const name = document.getElementById('name').value;
       const order = document.getElementById('order').value;
+      const location = document.getElementById('location').value;
 
       const res = await fetch('/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, name, order })
+        body: JSON.stringify({ to, name, order, location })
       });
 
       const result = await res.json();
+      responseBox.style.display = 'block';
+
       if (result.sid) {
-        responseBox.textContent = '✅ Sent! SID: ' + result.sid;
+        responseBox.className = 'success';
+        responseBox.textContent = '✅ WhatsApp Sent! SID: ' + result.sid;
       } else {
+        responseBox.className = 'error';
         responseBox.textContent = '❌ Error: ' + JSON.stringify(result.error);
+      }
+    });
+
+    callBtn.addEventListener('click', async () => {
+      const to = document.getElementById('to').value;
+
+      const res = await fetch('/make-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to })
+      });
+
+      const result = await res.json();
+      responseBox.style.display = 'block';
+
+      if (result.sid) {
+        responseBox.className = 'success';
+        responseBox.textContent = '📞 Call initiated! SID: ' + result.sid;
+      } else {
+        responseBox.className = 'error';
+        responseBox.textContent = '❌ Call Error: ' + JSON.stringify(result.error);
       }
     });
   </script>
