@@ -16,11 +16,11 @@ app.use(express.static('public')); // Serve frontend from /public folder
 // Twilio credentials from .env
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioNumber = process.env.TWILIO_WHATSAPP_FROM; // e.g., whatsapp:+5493541628808
+const twilioNumber = process.env.TWILIO_WHATSAPP_FROM; 
 const contentSid = process.env.TWILIO_TEMPLATE_SID;
-const voiceCallerId = process.env.TWILIO_CALLER_ID; // Voice Twilio number, e.g., +1XXXXXXXXXX
-const agentNumber = process.env.AGENT_NUMBER; // The agent who receives voice calls
-const baseUrl = process.env.BASE_URL; // e.g., https://your-app.railway.app
+const voiceCallerId = process.env.TWILIO_CALLER_ID; 
+const agentNumber = process.env.AGENT_NUMBER; 
+const baseUrl = process.env.BASE_URL; 
 
 const voiceClient = twilio(accountSid, authToken);
 
